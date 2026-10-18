@@ -41,11 +41,12 @@ export class FoldersController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('pageSize') pageSize?: string,
+    @Query('parentId') parentId?: string,
   ) {
     const pageNum = page ? Number(page) : undefined;
     const limitNum = pageSize || limit ? Number(pageSize || limit) : undefined;
-    if (pageNum !== undefined || limitNum !== undefined) {
-      return this.foldersService.findAll(user.id, pageNum, limitNum);
+    if (pageNum !== undefined || limitNum !== undefined || parentId !== undefined) {
+      return this.foldersService.findAll(user.id, pageNum, limitNum, parentId);
     }
     return this.foldersService.findAll(user.id);
   }

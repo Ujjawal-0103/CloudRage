@@ -72,7 +72,7 @@ function LoginForm() {
       localStorage.setItem("user_name", formattedName);
       localStorage.setItem("user_email", data.email);
 
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     } catch (error: any) {
       setServerError(error.message || "Login failed");
     }

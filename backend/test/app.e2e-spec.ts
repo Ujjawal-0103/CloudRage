@@ -3,6 +3,8 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { GlobalExceptionFilter } from '../src/common/filters/http-exception.filter';
+import { UsersService } from '../src/users/users.service';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
@@ -10,7 +12,12 @@ describe('AppController (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(UsersService)
+      .useValue({
+        findByEmail: jest.fn().mockResolvedValue(null),
+      })
+      .compile();
 
     app = moduleFixture.createNestApplication();
 
@@ -23,6 +30,7 @@ describe('AppController (e2e)', () => {
     });
 
     app.setGlobalPrefix('api');
+    app.useGlobalFilters(new GlobalExceptionFilter());
     await app.init();
   });
 

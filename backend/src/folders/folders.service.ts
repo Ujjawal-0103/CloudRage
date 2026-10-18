@@ -88,13 +88,17 @@ export class FoldersService {
       }
     }
 
-    // Recursive helper to gather all descendant folder IDs
-    const getAllDescendantFolderIds = (folderId: string): string[] => {
+    // Recursive helper to gather all descendant folder IDs with cycle detection
+    const getAllDescendantFolderIds = (folderId: string, visited = new Set<string>()): string[] => {
+      if (visited.has(folderId)) return [];
+      visited.add(folderId);
       const descendants: string[] = [];
       const directChildren = childrenMap.get(folderId) || [];
       for (const childId of directChildren) {
-        descendants.push(childId);
-        descendants.push(...getAllDescendantFolderIds(childId));
+        if (!visited.has(childId)) {
+          descendants.push(childId);
+          descendants.push(...getAllDescendantFolderIds(childId, visited));
+        }
       }
       return descendants;
     };
@@ -131,13 +135,19 @@ export class FoldersService {
     });
   }
 
-  async findAll(userId: string, page?: number, limit?: number) {
+  async findAll(userId: string, page?: number, limit?: number, parentId?: string) {
+    const whereClause: any = {
+      ownerId: userId,
+      deletedAt: null,
+    };
+
+    if (parentId && parentId !== 'all') {
+      whereClause.parentId = parentId === 'root' ? null : parentId;
+    }
+
     const [folders, files] = await Promise.all([
       this.prisma.folder.findMany({
-        where: {
-          ownerId: userId,
-          deletedAt: null,
-        },
+        where: whereClause,
         orderBy: {
           createdAt: 'desc',
         },
@@ -321,12 +331,16 @@ export class FoldersService {
     }
 
     const descendants: string[] = [];
+    const visited = new Set<string>([rootFolderId]);
     const queue = [...(childrenMap.get(rootFolderId) || [])];
     while (queue.length > 0) {
       const currentId = queue.shift()!;
-      descendants.push(currentId);
-      const childIds = childrenMap.get(currentId) || [];
-      queue.push(...childIds);
+      if (!visited.has(currentId)) {
+        visited.add(currentId);
+        descendants.push(currentId);
+        const childIds = childrenMap.get(currentId) || [];
+        queue.push(...childIds);
+      }
     }
 
     return descendants;
@@ -570,6 +584,9 @@ export class FoldersService {
 
         if (parentFolder) {
           parentFolder.children.push(currentFolder);
+        } else {
+          // If parent is deleted or missing, preserve folder at top level of tree
+          tree.push(currentFolder);
         }
       } else {
         tree.push(currentFolder);

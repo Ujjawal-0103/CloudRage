@@ -37,8 +37,8 @@ function CallbackHandler() {
           localStorage.setItem("user_email", decodeURIComponent(email));
         }
 
-        // Redirect directly to dashboard
-        router.replace("/dashboard");
+        // Redirect directly to dashboard with full page transition so cookies are immediately present
+        window.location.href = "/dashboard";
       } else {
         setAsyncError("No authentication token received. Please try signing in again.");
       }
