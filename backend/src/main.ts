@@ -10,6 +10,15 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
+  // Enable reverse-proxy awareness (Render, Next.js rewrite proxy)
+  const httpAdapter = app.getHttpAdapter();
+  if (typeof (httpAdapter as any)?.getInstance === 'function') {
+    const expressApp = (httpAdapter as any).getInstance();
+    if (expressApp && typeof expressApp.set === 'function') {
+      expressApp.set('trust proxy', 1);
+    }
+  }
+
   // 1. Security Headers - Helmet
   app.use(
     helmet({

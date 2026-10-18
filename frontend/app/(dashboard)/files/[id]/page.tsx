@@ -11,7 +11,7 @@ async function getFolderPath(currentId: string) {
     const token = cookieStore.get("auth_token")?.value || "";
 
     const backendUrl = (process.env.BACKEND_URL || 'http://localhost:3001').replace(/\/$/, '');
-    const response = await fetch(`${backendUrl}/folders`, {
+    const response = await fetch(`${backendUrl}/api/folders`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
@@ -21,9 +21,11 @@ async function getFolderPath(currentId: string) {
       const allFolders = Array.isArray(data) ? data : data.folders || [];
 
       const path = [];
+      const visited = new Set<string>();
       let current = allFolders.find((f: any) => f.id === currentId);
 
-      while (current) {
+      while (current && !visited.has(current.id)) {
+        visited.add(current.id);
         path.unshift({ id: current.id, name: current.name });
         const parentId = current.parentId || current.parent_id;
         current = allFolders.find((f: any) => f.id === parentId);

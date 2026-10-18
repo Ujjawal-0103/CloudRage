@@ -74,15 +74,25 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         status = HttpStatus.BAD_REQUEST;
         message = 'Referenced resource or folder does not exist';
         error = 'Bad Request';
+      } else if (prismaCode.startsWith('P10')) {
+        status = HttpStatus.SERVICE_UNAVAILABLE;
+        message = 'Database service is temporarily unavailable or credentials failed';
+        error = 'Service Unavailable';
       } else {
         status = HttpStatus.BAD_REQUEST;
         message = 'Database operation could not be completed';
         error = 'Bad Request';
       }
 
-      this.logger.warn(
-        `[${request.method}] ${request.url} - Status: ${status} - [Prisma:${prismaCode}] ${sanitizeLogMessage((exception as any).message || '')}`,
-      );
+      if (status >= 500) {
+        this.logger.error(
+          `[${request.method}] ${request.url} - Status: ${status} - [Prisma:${prismaCode}] ${sanitizeLogMessage((exception as any).message || '')}`,
+        );
+      } else {
+        this.logger.warn(
+          `[${request.method}] ${request.url} - Status: ${status} - [Prisma:${prismaCode}] ${sanitizeLogMessage((exception as any).message || '')}`,
+        );
+      }
     } else if (
       exception &&
       typeof exception === 'object' &&
